@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+   name: drupalpod
+  
+spec: 
+   replicas: 3
+   selector:
+      matchLabels:
+         env: dev
+         app: drupal
+         tier: frontend
+   strategy:
+         type: Recreate
+   template:
+      metadata:
+         name: drupalpod
+         labels:
+            env: dev
+            app: drupal
+            tier: frontend
+      spec:
+         initContainers:
+         - name: init-sites-volume
+           image: drupal:8.6
+           command: ['/bin/bash', '-c']
+           args: ['cp -r /var/www/html/sites/ /data/; chown www-data:www-data /data/ -R']
+           volumeMounts:
+           - mountPath: /data
+             name: vol-drupal
+         containers: 
+         -  name: "drupalcontain"
+            image: "drupal:8.6"
+            ports:
+            - containerPort: 80
+              name: drupal
+            volumeMounts:
+            - name: vol-drupal
+              mountPath: /var/www/html/modules
+              subPath: modules
+            - name: vol-drupal
+              mountPath: /var/www/html/profiles
+              subPath: profiles
+            - name: vol-drupal
+              mountPath: /var/www/html/themes
+              subPath: themes
+            - name: vol-drupal
+              mountPath: /var/www/html/sites
+              subPath: sites
+         volumes:
+            - name: vol-drupal
+              persistentVolumeClaim:
+                claimName: drupal-pvc

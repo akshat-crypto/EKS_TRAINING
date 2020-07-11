@@ -1,0 +1,58 @@
+--- 
+apiVersion: v1
+kind: Service
+metadata: 
+  name: postgres
+spec: 
+  ports: 
+    - name: postgres
+      port: 5432
+      protocol: TCP
+  selector: 
+    app: db
+    env: dev
+    tier: backend
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+   name: postgrespod
+spec:
+    replicas: 1
+    selector:
+      matchLabels:
+         env: dev
+         app: db
+         tier: backend
+    strategy:
+         type: Recreate
+    template:
+      metadata:
+            name: postgrespod
+            labels:
+              env: dev
+              app: db
+              tier: backend
+      spec:
+          containers:
+          -  name: "postgrescontain"
+             image: "postgres:10"
+             env:
+             - name: POSTGRES_DB
+               value: drupaldb
+             - name: POSTGRES_USER  
+               value: ZGVyZWs=
+             - name: POSTGRES_PASSWORD
+               value: ZGVyZWszMjE=
+             ports: 
+             - containerPort: 5432
+               name: postgres
+               protocol: TCP
+             volumeMounts: 
+             - name: vol-postgres
+               mountPath: /var/lib/postgresql/data
+               subPath: dbdata
+          volumes: 
+            - name: vol-postgres
+              persistentVolumeClaim: 
+                claimName: postgres-pvc
